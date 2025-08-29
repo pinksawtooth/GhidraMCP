@@ -72,7 +72,17 @@ public class GetCallee extends Handler {
 
 			Set<Function> callees = fn.getCalledFunctions(TaskMonitor.DUMMY);
 			if (callees.isEmpty()) {
-				return "(no callees)";
+				// If no callees are found, check if the function is a thunk
+				if (fn.isThunk()) {
+					Function thunkedFunction = fn.getThunkedFunction(false);
+					if (thunkedFunction != null) {
+						callees = thunkedFunction.getCalledFunctions(TaskMonitor.DUMMY);
+					}
+				}
+
+				if (callees.isEmpty()) {
+					return "(no callees)";
+				}
 			}
 
 			List<String> calleeList = new ArrayList<>();
