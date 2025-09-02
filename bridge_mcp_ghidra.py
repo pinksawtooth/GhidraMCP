@@ -628,6 +628,24 @@ def set_bytes(address: str, bytes_hex: str) -> str:
     return safe_post("set_bytes", {"address": address, "bytes": bytes_hex})
 
 @mcp.tool()
+def add_bookmark(address: str, category: str, comment: str, type: str = "Note") -> str:
+    """
+    Creates a bookmark at the specified address.
+
+    Args:
+        address: The address to create the bookmark at.
+        category: The category of the bookmark.
+        comment: The comment for the bookmark.
+        type: The type of the bookmark. Defaults to "Note".
+              Available types are: "Note", "Info", "Warning", "Error", "Analysis".
+
+    Returns:
+        A string indicating the result of the operation.
+    NOTE: if a bookmark of the same type already exists at the address, it will be replaced.
+    """
+    return safe_post("add_bookmark", {"address": address, "category": category, "comment": comment, "type": type})
+
+@mcp.tool()
 def get_callee(address: str) -> list:
     """
     Get the functions called by the function at the specified address.
