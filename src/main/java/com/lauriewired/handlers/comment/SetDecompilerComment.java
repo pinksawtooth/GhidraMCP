@@ -3,7 +3,7 @@ package com.lauriewired.handlers.comment;
 import com.lauriewired.handlers.Handler;
 import com.sun.net.httpserver.HttpExchange;
 import ghidra.framework.plugintool.PluginTool;
-import ghidra.program.model.listing.CodeUnit;
+import ghidra.program.model.listing.CommentType;
 
 import java.util.Map;
 
@@ -48,6 +48,6 @@ public final class SetDecompilerComment extends Handler {
 	 * @return true if the comment was set successfully, false otherwise
 	 */
 	private boolean setDecompilerComment(String addressStr, String comment) {
-		return setCommentAtAddress(tool, addressStr, comment, CodeUnit.PRE_COMMENT, "Set decompiler comment");
+		return setCommentAtAddress(tool, addressStr, comment, CommentType.PRE, "Set decompiler comment");
 	}
 }

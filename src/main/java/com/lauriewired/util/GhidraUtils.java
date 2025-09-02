@@ -6,6 +6,7 @@ import ghidra.program.model.data.DataType;
 import ghidra.program.model.data.DataTypeManager;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.listing.Program;
+import ghidra.program.model.listing.CommentType;
 import ghidra.util.Msg;
 
 import javax.swing.*;
@@ -85,7 +86,7 @@ public final class GhidraUtils {
 	 * @return true if successful, false otherwise
 	 */
 	public static boolean setCommentAtAddress(PluginTool tool,
-			String addressStr, String comment, int commentType, String transactionName) {
+			String addressStr, String comment, CommentType commentType, String transactionName) {
 		Program program = getCurrentProgram(tool);
 		if (program == null)
 			return false;

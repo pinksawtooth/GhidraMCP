@@ -73,7 +73,7 @@ public final class DisassembleFunction extends Handler {
 				if (instr.getAddress().compareTo(end) > 0) {
 					break; // Stop if we've gone past the end of the function
 				}
-				String comment = listing.getComment(CodeUnit.EOL_COMMENT, instr.getAddress());
+				String comment = listing.getComment(CommentType.EOL, instr.getAddress());
 				comment = (comment != null) ? "; " + comment : "";
 
 				result.append(String.format("%s: %s %s\n",

@@ -203,21 +203,8 @@ Lastly, give your MCP connection a name for VSCode.
 ![image](https://github.com/user-attachments/assets/e1f58c66-8c20-4f05-aa3a-392724c383b0)
 
 # Building from Source
-1. Copy the following files from your Ghidra directory to this project's `lib/` directory:
-- `Ghidra/Features/Base/lib/Base.jar`
-- `Ghidra/Features/Decompiler/lib/Decompiler.jar`
-- `Ghidra/Framework/Docking/lib/Docking.jar`
-- `Ghidra/Framework/Generic/lib/Generic.jar`
-- `Ghidra/Framework/Project/lib/Project.jar`
-- `Ghidra/Framework/SoftwareModeling/lib/SoftwareModeling.jar`
-- `Ghidra/Framework/Utility/lib/Utility.jar`
-- `Ghidra/Framework/Gui/lib/Gui.jar`
-2. Build with Maven by running:
+Build with Gradle by simply running:
 
-`mvn clean package assembly:single`
+`gradle`
 
 The generated zip file includes the built Ghidra plugin and its resources. These files are required for Ghidra to recognize the new extension.
-
-- lib/GhidraMCP.jar
-- extensions.properties
-- Module.manifest

@@ -3,7 +3,7 @@ package com.lauriewired.handlers.comment;
 import com.lauriewired.handlers.Handler;
 import com.sun.net.httpserver.HttpExchange;
 import ghidra.framework.plugintool.PluginTool;
-import ghidra.program.model.listing.CodeUnit;
+import ghidra.program.model.listing.CommentType;
 
 import java.util.Map;
 
@@ -49,6 +49,6 @@ public final class SetDisassemblyComment extends Handler {
 	 * @return true if the comment was set successfully, false otherwise
 	 */
 	private boolean setDisassemblyComment(String addressStr, String comment) {
-		return setCommentAtAddress(tool, addressStr, comment, CodeUnit.EOL_COMMENT, "Set disassembly comment");
+		return setCommentAtAddress(tool, addressStr, comment, CommentType.EOL, "Set disassembly comment");
 	}
 }

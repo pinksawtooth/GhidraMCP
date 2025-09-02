@@ -5,7 +5,7 @@ import com.sun.net.httpserver.HttpExchange;
 import ghidra.framework.plugintool.PluginTool;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.data.DataTypeManager;
-import ghidra.program.model.listing.CodeUnit;
+import ghidra.program.model.listing.CommentType;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.listing.Program;
 import ghidra.program.model.symbol.SourceType;
@@ -186,7 +186,7 @@ public final class SetFunctionPrototype extends Handler {
 		try {
 			program.getListing().setComment(
 					func.getEntryPoint(),
-					CodeUnit.PLATE_COMMENT,
+					CommentType.PLATE,
 					"Setting prototype: " + prototype);
 		} finally {
 			program.endTransaction(txComment, true);
