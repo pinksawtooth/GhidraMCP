@@ -9,6 +9,10 @@
 
 ![ghidra_MCP_logo](https://github.com/user-attachments/assets/4986d702-be3f-4697-acce-aea55cd79ad3)
 
+LaurieWired's original GhidraMCP project is no longer maintained, and the fork I was co-developing with [DaCodeChick](https://github.com/DaCodeChick/GhidraMCP/) has also been moved to a public archive. 
+
+This repository aims to continue and actively maintain the development of GhidraMCP.
+
 
 # ghidraMCP
 ghidraMCP is a Model Context Protocol server for allowing LLMs to autonomously reverse engineer applications. It exposes numerous tools from core Ghidra functionality to MCP clients.
