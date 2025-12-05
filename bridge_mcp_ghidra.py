@@ -7,6 +7,7 @@
 # ///
 
 import sys
+import json
 import requests
 import argparse
 import logging
@@ -15,6 +16,7 @@ from urllib.parse import urljoin
 from mcp.server.fastmcp import FastMCP
 
 DEFAULT_GHIDRA_SERVER = "http://127.0.0.1:8080/"
+DEFAULT_REQUEST_TIMEOUT = 30
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +24,8 @@ mcp = FastMCP("ghidra-mcp")
 
 # Initialize ghidra_server_url with default value
 ghidra_server_url = DEFAULT_GHIDRA_SERVER
+# Initialize ghidra_request_timeout with default value
+ghidra_request_timeout = DEFAULT_REQUEST_TIMEOUT
 
 def safe_get(endpoint: str, params: dict = None) -> list:
     """
@@ -33,7 +37,7 @@ def safe_get(endpoint: str, params: dict = None) -> list:
     url = urljoin(ghidra_server_url, endpoint)
 
     try:
-        response = requests.get(url, params=params, timeout=5)
+        response = requests.get(url, params=params, timeout=ghidra_request_timeout)
         response.encoding = 'utf-8'
         if response.ok:
             return response.text.splitlines()
@@ -46,9 +50,9 @@ def safe_post(endpoint: str, data: dict | str) -> str:
     try:
         url = urljoin(ghidra_server_url, endpoint)
         if isinstance(data, dict):
-            response = requests.post(url, data=data, timeout=5)
+            response = requests.post(url, data=data, timeout=ghidra_request_timeout)
         else:
-            response = requests.post(url, data=data.encode("utf-8"), timeout=5)
+            response = requests.post(url, data=data.encode("utf-8"), timeout=ghidra_request_timeout)
         response.encoding = 'utf-8'
         if response.ok:
             return response.text.strip()
@@ -288,6 +292,97 @@ def list_strings(offset: int = 0, limit: int = 2000, filter: str = None) -> list
     return safe_get("strings", params)
 
 @mcp.tool()
+def create_struct(name: str, category: str = None, size: int = 0, members: list = None) -> str:
+    """
+    Create a new structure.
+    
+    Args:
+        name: The name of the new structure.
+        category: The category path for the structure (e.g., /my_structs). Defaults to root.
+        size: The initial size of the structure.
+        members: A list of member dictionaries to add to the new struct.
+                 Each dict should have 'name', 'type', and optionally 'offset' and 'comment'.
+                 The 'type' should be a builtin C datatype or a structure name defined in Ghidra data type manager.
+                 Pointers are specified with asterisk, e.g. void*, int* or PCSTR, PVOID for Windows types
+                 Example: [{"name": "field1", "type": "int", "offset": 0, "comment": "my field"}]
+                 
+    Returns:
+        A status message indicating success or failure.
+    """
+    data = {"name": name, "size": str(size)}
+    if category:
+        data["category"] = category
+    if members:
+        data["members"] = json.dumps(members)
+    return safe_post("create_struct", data)
+
+@mcp.tool()
+def add_struct_members(struct_name: str, members: list, category: str = None) -> str:
+    """
+    Add a member to an existing structure.
+    
+    Args:
+        struct_name: The name of the structure to modify.
+        members: A list of member dictionaries to add to the new struct.
+                 Each dict should have 'name', 'type', and optionally 'offset' and 'comment'.
+                 The 'type' should be a builtin C datatype or a structure name defined in Ghidra data type manager.
+                 Pointers are specified with asterisk, e.g. void*, int* or PCSTR, PVOID for Windows types
+                 Example: [{"name": "field1", "type": "int", "offset": 0, "comment": "my field"}]
+        category: The category path for the structure. Defaults to root.
+        
+    Returns:
+        A status message indicating success or failure.
+    """
+
+    data = {"struct_name": struct_name, "members": json.dumps(members)}
+    if category:
+        data["category"] = category
+    return safe_post("add_struct_members", data)
+
+@mcp.tool()
+def clear_struct(struct_name: str, category: str = None) -> str:
+    """
+    Remove all members from a structure.
+    
+    Args:
+        struct_name: The name of the structure to clear.
+        category: The category path for the structure. Defaults to root.
+        
+    Returns:
+        A status message indicating success or failure.
+    """
+    data = {"struct_name": struct_name}
+    if category:
+        data["category"] = category
+    return safe_post("clear_struct", data)
+
+@mcp.tool()
+def get_struct(name: str, category: str = None) -> dict:
+    """
+    Get a struct's definition.
+    
+    Args:
+        name: The name of the structure.
+        category: The category path for the structure. Defaults to root.
+        
+    Returns:
+        A dictionary representing the struct, or an error message.
+    """
+    params = {"name": name}
+    if category:
+        params["category"] = category
+
+    response_lines = safe_get("get_struct", params)
+    response_str = "\n".join(response_lines)
+
+    try:
+        # Attempt to parse the JSON response
+        return json.loads(response_str)
+    except json.JSONDecodeError:
+        # If it's not JSON, it's likely an error message
+        return {"error": response_str}
+
+@mcp.tool()
 def get_data_by_label(label: str) -> str:
     """
     Get information about a data label.
@@ -339,6 +434,241 @@ def search_bytes(bytes_hex: str, offset: int = 0, limit: int = 100) -> list:
         {"bytes": bytes_hex, "offset": offset, "limit": limit},
     )
 
+@mcp.tool()
+def create_enum(name: str, category: str = None, size: int = 4, values: list = None) -> str:
+    """
+    Create a new enum.
+    
+    Args:
+        name: The name of the new enum.
+        category: The category path for the enum (e.g., /my_enums). Defaults to root.
+        size: The size of the enum in bytes (default: 4).
+        values: A list of value dictionaries to add to the new enum.
+                Each dict should have 'name', 'value', and optionally 'comment'.
+                Example: [{"name": "VALUE1", "value": 0, "comment": "First value"}]
+                
+    Returns:
+        A status message indicating success or failure.
+    """
+    data = {"name": name, "size": str(size)}
+    if category:
+        data["category"] = category
+    if values:
+        data["values"] = json.dumps(values)
+    return safe_post("create_enum", data)
+
+@mcp.tool()
+def add_enum_values(enum_name: str, values: list, category: str = None) -> str:
+    """
+    Add values to an existing enum.
+    
+    Args:
+        enum_name: The name of the enum to modify.
+        values: A list of value dictionaries to add to the enum.
+                Each dict should have 'name', 'value', and optionally 'comment'.
+                Example: [{"name": "VALUE1", "value": 0, "comment": "First value"}]
+        category: The category path for the enum. Defaults to root.
+        
+    Returns:
+        A status message indicating success or failure.
+    """
+    data = {"enum_name": enum_name, "values": json.dumps(values)}
+    if category:
+        data["category"] = category
+    return safe_post("add_enum_values", data)
+
+@mcp.tool()
+def get_enum(name: str, category: str = None) -> dict:
+    """
+    Get an enum's definition.
+    
+    Args:
+        name: The name of the enum.
+        category: The category path for the enum. Defaults to root.
+        
+    Returns:
+        A dictionary representing the enum, or an error message.
+    """
+    params = {"name": name}
+    if category:
+        params["category"] = category
+
+    response_lines = safe_get("get_enum", params)
+    response_str = "\n".join(response_lines)
+
+    try:
+        # Attempt to parse the JSON response
+        return json.loads(response_str)
+    except json.JSONDecodeError:
+        # If it's not JSON, it's likely an error message
+        return {"error": response_str}
+
+@mcp.tool()
+def set_global_data_type(address: str, data_type: str, length: int = -1, clear_mode: str = "CHECK_FOR_SPACE") -> str:
+    """
+    Set the data type of a global variable or data at a specific memory address.
+    
+    Args:
+        address: The memory address in hex format (e.g., "0x401000")
+        data_type: The name of the data type to apply (e.g., "int", "char*", "MyStruct")
+        length: Optional length for dynamic data types (default: -1, let type determine)
+        clear_mode: How to handle conflicting data. Options:
+                   - "CHECK_FOR_SPACE": Ensure data fits before clearing (default)
+                   - "CLEAR_SINGLE_DATA": Always clear single code unit at address
+                   - "CLEAR_ALL_UNDEFINED_CONFLICT_DATA": Clear conflicting undefined data
+                   - "CLEAR_ALL_DEFAULT_CONFLICT_DATA": Clear conflicting default data
+                   - "CLEAR_ALL_CONFLICT_DATA": Clear all conflicting data
+                   
+    Returns:
+        A status message indicating success or failure.
+    """
+    data = {
+        "address": address,
+        "data_type": data_type,
+        "clear_mode": clear_mode
+    }
+    if length > 0:
+        data["length"] = str(length)
+    
+    return safe_post("set_global_data_type", data)
+
+@mcp.tool()
+def add_class_members(class_name: str, members: list, parent_namespace: str = None) -> str:
+    """
+    Add members to an existing C++ class.
+    
+    Args:
+        class_name: The name of the class to modify.
+        members: A list of member dictionaries to add to the class.
+                Each dict should have 'name', 'type', and optionally 'offset' and 'comment'.
+                Example: [{"name": "health", "type": "float", "comment": "Player health"}]
+        parent_namespace: The parent namespace where the class is located (optional).
+                
+    Returns:
+        A status message indicating success or failure.
+    """
+    params = {"class_name": class_name, "members": json.dumps(members)}
+    if parent_namespace:
+        params["parent_namespace"] = parent_namespace
+
+    return safe_post("add_class_members", params)
+
+@mcp.tool()
+def remove_class_members(class_name: str, members: list, parent_namespace: str = None) -> str:
+    """
+    Remove members from an existing C++ class.
+    
+    Args:
+        class_name: The name of the class to modify.
+        members: A list of member names to remove from the class.
+                Example: ["old_member", "unused_field"]
+        parent_namespace: The parent namespace where the class is located (optional).
+                
+    Returns:
+        A status message indicating success or failure.
+    """
+    params = {"class_name": class_name, "members": json.dumps(members)}
+    if parent_namespace:
+        params["parent_namespace"] = parent_namespace
+
+    return safe_post("remove_class_members", params)
+
+@mcp.tool()
+def remove_enum_values(enum_name: str, values: list, category: str = None) -> str:
+    """
+    Remove values from an existing enum.
+    
+    Args:
+        enum_name: The name of the enum to modify.
+        values: A list of value names to remove from the enum.
+                Example: ["OLD_VALUE", "DEPRECATED_OPTION"]
+        category: The category path for the enum (optional, defaults to root).
+                
+    Returns:
+        A status message indicating success or failure.
+    """
+    params = {"enum_name": enum_name, "values": json.dumps(values)}
+    if category:
+        params["category"] = category
+
+    return safe_post("remove_enum_values", params)
+
+@mcp.tool()
+def remove_struct_members(struct_name: str, members: list, category: str = None) -> str:
+    """
+    Remove members from an existing struct.
+    
+    Args:
+        struct_name: The name of the struct to modify.
+        members: A list of member names to remove from the struct.
+                Example: ["old_field", "unused_member"]
+        category: The category path for the struct (optional, defaults to root).
+                
+    Returns:
+        A status message indicating success or failure.
+    """
+    params = {"struct_name": struct_name, "members": json.dumps(members)}
+    if category:
+        params["category"] = category
+
+    return safe_post("remove_struct_members", params)
+
+@mcp.tool()
+def set_bytes(address: str, bytes_hex: str) -> str:
+    """
+    Writes a sequence of bytes to the specified address in the program's memory.
+
+    Args:
+        address: Destination address (e.g., "0x140001000")
+        bytes_hex: Sequence of space-separated bytes in hexadecimal format (e.g., "90 90 90 90")
+
+    Returns:
+        Result of the operation (e.g., "Bytes written successfully" or a detailed error)
+    """
+    return safe_post("set_bytes", {"address": address, "bytes": bytes_hex})
+
+@mcp.tool()
+def add_bookmark(address: str, category: str, comment: str, type: str = "Note") -> str:
+    """
+    Creates a bookmark at the specified address.
+
+    Args:
+        address: The address to create the bookmark at.
+        category: The category of the bookmark.
+        comment: The comment for the bookmark.
+        type: The type of the bookmark. Defaults to "Note".
+              Available types are: "Note", "Info", "Warning", "Error", "Analysis".
+
+    Returns:
+        A string indicating the result of the operation.
+    NOTE: if a bookmark of the same type already exists at the address, it will be replaced.
+    """
+    # Request JSON-formatted response for consistency with other tools
+    return safe_post("add_bookmark", {"address": address, "category": category, "comment": comment, "type": type, "format": "json"})
+
+@mcp.tool()
+def get_callee(address: str) -> list:
+    """
+    Get the functions called by the function at the specified address.
+    
+    Args:
+        address: The address within the function.
+        
+    Returns:
+        A list of called functions.
+    """
+    lines = safe_get("get_callee", {"address": address})
+    # Try to parse JSON array if the bridge returned structured output
+    try:
+        body = "\n".join(lines).strip()
+        if body.startswith("[") and body.endswith("]"):
+            parsed = json.loads(body)
+            if isinstance(parsed, list):
+                return parsed
+    except Exception:
+        pass
+    return lines
+
 def main():
     parser = argparse.ArgumentParser(description="MCP server for Ghidra")
     parser.add_argument("--ghidra-server", type=str, default=DEFAULT_GHIDRA_SERVER,
@@ -349,12 +679,18 @@ def main():
                         help="Port to run MCP server on (only used for sse), default: 8081")
     parser.add_argument("--transport", type=str, default="stdio", choices=["stdio", "sse"],
                         help="Transport protocol for MCP, default: stdio")
+    parser.add_argument("--ghidra-timeout", type=int, default=DEFAULT_REQUEST_TIMEOUT,
+                        help=f"MCP requests timeout, default: {DEFAULT_REQUEST_TIMEOUT}")
     args = parser.parse_args()
     
     # Use the global variable to ensure it's properly updated
     global ghidra_server_url
     if args.ghidra_server:
         ghidra_server_url = args.ghidra_server
+        
+    global ghidra_request_timeout
+    if args.ghidra_timeout:
+        ghidra_request_timeout = args.ghidra_timeout
     
     if args.transport == "sse":
         try:
@@ -387,4 +723,3 @@ def main():
         
 if __name__ == "__main__":
     main()
-
