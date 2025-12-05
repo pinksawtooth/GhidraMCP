@@ -132,7 +132,30 @@ https://github.com/user-attachments/assets/75f0c176-6da1-48dc-ad96-c182eb4648c3
 
 Theoretically, any MCP client should work with ghidraMCP.  Three examples are given below.
 
-## Example 1: Claude Desktop
+## Example: Codex
+To set up Codex as a Ghidra MCP client, go to `Codex` -> `MCP Settings` -> `open config.toml and add the following:
+
+```
+projects = { "/Users/user/codex" = { trust_level = "trusted" } }
+model = "gpt-5.1-codex-max"
+model_reasoning_effort = "high"
+network_access = true
+
+[tools]
+web_search = true
+
+[mcp_servers.ghidra]
+command = "/Users/user/.mcp/bin/python3"
+args =  ["/Users/user/GhidraMCP/bridge_mcp_ghidra.py", "--ghidra-server", "http://127.0.0.1:8080/"]
+```
+
+If you're using Windows, use the following settings:
+```
+[mcp_servers.ghidra]
+SYSTEMROOT = 'C:\Windows'
+```
+
+## Example: Claude Desktop
 To set up Claude Desktop as a Ghidra MCP client, go to `Claude` -> `Settings` -> `Developer` -> `Edit Config` -> `claude_desktop_config.json` and add the following:
 
 ```json
@@ -157,7 +180,7 @@ Alternatively, edit this file directly:
 
 The server IP and port are configurable and should be set to point to the target Ghidra instance. If not set, both will default to localhost:8080.
 
-## Example 2: Cline
+## Example: Cline / Roo Code / Kilo Code
 To use GhidraMCP with [Cline](https://cline.bot), this requires manually running the MCP server as well. First run the following command:
 
 ```
@@ -173,14 +196,33 @@ Then select `Remote Servers` and add the following, ensuring that the url matche
 1. Server Name: GhidraMCP
 2. Server URL: `http://127.0.0.1:8081/sse`
 
-## Example 3: 5ire
+or 
+
+```
+{
+  "mcpServers": {
+    "ghidra": {
+      "command": "python3",
+      "args": [
+        "/Users/user/GhidraMCP/bridge_mcp_ghidra.py",
+        "--ghidra-server",
+        "http://127.0.0.1:8080/"
+      ],
+      "timeout": 300,
+      "disabled": false
+    }
+  }
+}
+```
+
+## Example: 5ire
 Another MCP client that supports multiple models on the backend is [5ire](https://github.com/nanbingxyz/5ire). To set up GhidraMCP, open 5ire and go to `Tools` -> `New` and set the following configurations:
 
 1. Tool Key: ghidra
 2. Name: GhidraMCP
 3. Command: `python /ABSOLUTE_PATH_TO/bridge_mcp_ghidra.py`
 
-## Example 4: VSCode (GitHub Copilot)
+## Example: VSCode (GitHub Copilot)
 GitHub Copilot's agent mode can connect to MCP servers over both stdio and sse. To set up GhidraMCP as a "tool" in VSCode's Copilot chat, you need to first make sure you are in "Agent" mode. Then, click on the tools icon in the chat box:
 
 ![image](https://github.com/user-attachments/assets/096c9639-c0f3-4217-bdab-f2a0f364ac9c)
