@@ -181,7 +181,13 @@ Alternatively, edit this file directly:
 The server IP and port are configurable and should be set to point to the target Ghidra instance. If not set, both will default to localhost:8080.
 
 ## Example: Cline / Roo Code / Kilo Code
-To use GhidraMCP with [Cline](https://cline.bot), this requires manually running the MCP server as well. First run the following command:
+To use GhidraMCP with [Cline](https://cline.bot), this requires manually running the MCP server as well. First run one of the following commands:
+
+```
+python bridge_mcp_ghidra.py --transport streamable-http --mcp-host 127.0.0.1 --mcp-port 8081 --ghidra-server http://127.0.0.1:8080/
+```
+
+SSE is deprecated in MCP, but is still supported here for compatibility:
 
 ```
 python bridge_mcp_ghidra.py --transport sse --mcp-host 127.0.0.1 --mcp-port 8081 --ghidra-server http://127.0.0.1:8080/
@@ -194,7 +200,11 @@ The only *required* argument is the transport. If all other arguments are unspec
 Then select `Remote Servers` and add the following, ensuring that the url matches the MCP host and port:
 
 1. Server Name: GhidraMCP
-2. Server URL: `http://127.0.0.1:8081/sse`
+2. Server URL: `http://127.0.0.1:8081/mcp` (streamable HTTP)
+
+If using SSE instead:
+
+- Server URL: `http://127.0.0.1:8081/sse`
 
 or 
 
@@ -252,4 +262,3 @@ Build with Gradle by simply running:
 `gradle`
 
 The generated zip file includes the built Ghidra plugin and its resources. These files are required for Ghidra to recognize the new extension.
-

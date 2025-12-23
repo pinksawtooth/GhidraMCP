@@ -674,11 +674,11 @@ def main():
     parser.add_argument("--ghidra-server", type=str, default=DEFAULT_GHIDRA_SERVER,
                         help=f"Ghidra server URL, default: {DEFAULT_GHIDRA_SERVER}")
     parser.add_argument("--mcp-host", type=str, default="127.0.0.1",
-                        help="Host to run MCP server on (only used for sse), default: 127.0.0.1")
+                        help="Host to run MCP server on (only used for sse/streamable-http), default: 127.0.0.1")
     parser.add_argument("--mcp-port", type=int,
-                        help="Port to run MCP server on (only used for sse), default: 8081")
-    parser.add_argument("--transport", type=str, default="stdio", choices=["stdio", "sse"],
-                        help="Transport protocol for MCP, default: stdio")
+                        help="Port to run MCP server on (only used for sse/streamable-http), default: 8081")
+    parser.add_argument("--transport", type=str, default="stdio", choices=["stdio", "sse", "streamable-http", "streamable_http"],
+                        help="Transport protocol for MCP, default: stdio (sse is deprecated; use streamable-http)")
     parser.add_argument("--ghidra-timeout", type=int, default=DEFAULT_REQUEST_TIMEOUT,
                         help=f"MCP requests timeout, default: {DEFAULT_REQUEST_TIMEOUT}")
     args = parser.parse_args()
@@ -692,7 +692,8 @@ def main():
     if args.ghidra_timeout:
         ghidra_request_timeout = args.ghidra_timeout
     
-    if args.transport == "sse":
+    transport = args.transport.replace("_", "-")
+    if transport in ("sse", "streamable-http"):
         try:
             # Set up logging
             log_level = logging.INFO
@@ -712,10 +713,19 @@ def main():
                 mcp.settings.port = 8081
 
             logger.info(f"Connecting to Ghidra server at {ghidra_server_url}")
-            logger.info(f"Starting MCP server on http://{mcp.settings.host}:{mcp.settings.port}/sse")
-            logger.info(f"Using transport: {args.transport}")
+            if transport == "sse":
+                logger.warning("SSE transport is deprecated in MCP; prefer streamable-http.")
+                logger.info(f"Starting MCP server on http://{mcp.settings.host}:{mcp.settings.port}{mcp.settings.sse_path}")
+            else:
+                logger.info(
+                    "Starting MCP server on http://%s:%s%s",
+                    mcp.settings.host,
+                    mcp.settings.port,
+                    mcp.settings.streamable_http_path,
+                )
+            logger.info(f"Using transport: {transport}")
 
-            mcp.run(transport="sse")
+            mcp.run(transport=transport)
         except KeyboardInterrupt:
             logger.info("Server stopped by user")
     else:
