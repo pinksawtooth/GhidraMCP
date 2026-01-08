@@ -90,7 +90,7 @@ public class GhidraMCPPlugin extends Plugin {
 	private static final int DEFAULT_DECOMPILE_TIMEOUT = 30;
 
 	/** HashMap to store all registered API routes */
-	private static final HashMap<String, Handler> routes = new HashMap<>();
+	private final HashMap<String, Handler> routes = new HashMap<>();
 
 	/** The timeout for decompilation requests in seconds */
 	private int decompileTimeout;
@@ -276,10 +276,9 @@ public class GhidraMCPPlugin extends Plugin {
 	@Override
 	public void dispose() {
 		if (server != null) {
-			Msg.info(this, "Stopping GhidraMCP HTTP server...");
-			server.stop(1); // Stop with a small delay (e.g., 1 second) for connections to finish
-			server = null; // Nullify the reference
-			Msg.info(this, "GhidraMCP HTTP server stopped.");
+			Msg.info(this, "Stopping GhidraMCP HTTP server.");
+			server.stop(0);
+			server = null;
 		}
 		super.dispose();
 	}
